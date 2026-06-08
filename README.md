@@ -1,5 +1,9 @@
 # GeometricNeuronV5
 
+EDIT: Added a live web page that uses GN5 maths to detect rising or falling pitch, live. 
+
+https://anttiluode.github.io/GeometricNeuronV5/
+
 *Closing the seam between the single neuron and the population — and teaching the field to read the direction of time.*
 
 **PerceptionLab / Antti Luode, with Claude (Opus 4.8). Helsinki, June 2026.**
