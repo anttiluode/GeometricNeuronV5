@@ -1,6 +1,10 @@
 # GeometricNeuronV5
 
+![pic1](geometric_neuron_v5.png)
+
 EDIT: Added a live web page that uses GN5 maths to detect rising or falling pitch, live. 
+
+![pic2](chiralsynth.png)
 
 https://anttiluode.github.io/GeometricNeuronV5/
 
@@ -28,6 +32,8 @@ The seam: Model A reads an **orbit**; Model B read the field **instantaneously**
 ---
 
 ## The arc, in order
+
+![pic3](ephaptic_spiking_field_v3.png)
 
 1. **`membrane_to_qualia_synthesis.md`** — the thesis. The two models are one system at two grains, and the thing that joins them is **energy**: the dendritic cable's `αᵏ` decay *is* the membrane attenuation, the held subthreshold field is the inner side, the spike is the outer side, and the delta-code (silent hold, sparse spikes) is the sparse-coding energy economy of cortex rediscovered from dynamics.
 
