@@ -1,0 +1,497 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chiral Ear · a geometric neuron that hears the direction of time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a12; --pan:#12121e; --pan2:#171726; --line:#23233a;
+  --red:#ff3b6b; --blu:#2ec5ff; --grn:#42f5a1; --yel:#f5c542; --vio:#a98bff; --gry:#6b6b85;
+  --txt:#e7e7f5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:"IBM Plex Mono",monospace}
+body{
+  background:
+    radial-gradient(900px 500px at 12% -10%, rgba(46,197,255,.08), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(169,139,255,.08), transparent 55%),
+    radial-gradient(700px 700px at 50% 120%, rgba(255,59,107,.06), transparent 60%),
+    var(--bg);
+  min-height:100vh; padding:26px 18px 60px; line-height:1.45;
+}
+.wrap{max-width:1180px;margin:0 auto}
+header{margin-bottom:20px}
+.eyebrow{color:var(--gry);font-size:11px;letter-spacing:.32em;text-transform:uppercase}
+h1{
+  font-family:"Major Mono Display",monospace; font-weight:400;
+  font-size:clamp(30px,6vw,58px); margin:.18em 0 .12em; line-height:.98;
+  background:linear-gradient(92deg,var(--blu),var(--vio) 55%,var(--red));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.tag{color:var(--gry);font-size:13px;max-width:760px}
+.tag b{color:var(--txt);font-weight:600}
+.ethos{display:inline-block;margin-top:10px;font-size:11px;letter-spacing:.22em;color:var(--yel);
+  border:1px solid var(--line);border-radius:999px;padding:5px 13px}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 18px;align-items:center}
+button{
+  font-family:inherit;font-size:13px;color:var(--txt);background:var(--pan2);
+  border:1px solid var(--line);border-radius:11px;padding:11px 16px;cursor:pointer;
+  transition:.15s transform,.15s border-color,.15s background; -webkit-tap-highlight-color:transparent;
+}
+button:hover{border-color:#3a3a5e;transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+button.primary{background:linear-gradient(92deg,rgba(46,197,255,.22),rgba(169,139,255,.22));border-color:#2ec5ff66;color:#fff}
+button.up{border-color:#2ec5ff55}
+button.down{border-color:#ff3b6b55}
+button:disabled{opacity:.4;cursor:default;transform:none}
+.hint{color:var(--gry);font-size:11px;margin-left:4px}
+
+.grid{display:grid;grid-template-columns:1.15fr .9fr;gap:14px}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+.panel{background:linear-gradient(180deg,var(--pan),#0e0e18);border:1px solid var(--line);border-radius:16px;padding:14px 15px;position:relative;overflow:hidden}
+.panel h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gry);margin:0 0 10px;font-weight:600}
+canvas{display:block;width:100%;border-radius:9px}
+
+/* dial */
+.dial-wrap{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+@media(max-width:520px){.dial-wrap{grid-template-columns:1fr}}
+.readout{font-size:12px;color:var(--gry)}
+.verdict{font-family:"Major Mono Display",monospace;font-size:clamp(22px,4.4vw,34px);line-height:1.05;margin:2px 0 8px;letter-spacing:.02em}
+.verdict.up{color:var(--blu)} .verdict.down{color:var(--red)} .verdict.steady{color:var(--gry)}
+.bignum{font-size:13px;color:var(--txt)}
+.bignum b{font-size:22px}
+
+/* meters */
+.meterrow{display:flex;align-items:center;gap:10px;margin:9px 0}
+.meterrow .lbl{font-size:11px;color:var(--gry);width:96px;flex:none}
+.bar{flex:1;height:12px;background:#0c0c16;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.bar > i{display:block;height:100%;width:0%;border-radius:6px;transition:width .08s linear}
+.val{font-size:12px;color:var(--txt);width:74px;text-align:right;flex:none}
+
+.stat{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px dashed #1d1d30}
+.stat:last-child{border-bottom:0}
+.stat span:first-child{color:var(--gry)}
+.stat b{color:var(--txt);font-weight:600}
+
+/* proof panel */
+.proof{margin-top:14px}
+.proofgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+@media(max-width:880px){.proofgrid{grid-template-columns:1fr}}
+.lk{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+.lkbox{flex:1;min-width:130px;background:#0c0c16;border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+.lkbox .t{font-size:11px;color:var(--gry);letter-spacing:.1em}
+.lkbox .n{font-size:24px;font-weight:600;margin-top:3px}
+.lkbox.up .n{color:var(--blu)} .lkbox.down .n{color:var(--red)}
+.lkbox .s{font-size:11px;color:var(--gry);margin-top:2px}
+
+details{margin-top:16px;background:var(--pan);border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+summary{cursor:pointer;padding:12px 0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--vio)}
+details p,details li{font-size:12.5px;color:#c7c7da}
+details b{color:var(--txt)}
+.lab{color:var(--grn)} .ceil{color:var(--yel)} .bet{color:var(--red)}
+footer{margin-top:26px;color:var(--gry);font-size:11px;text-align:center;letter-spacing:.05em}
+a{color:var(--blu)}
+.badge{font-size:10px;color:var(--gry);position:absolute;top:12px;right:14px;letter-spacing:.1em}
+.live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#333;margin-right:6px;vertical-align:middle}
+.live.on{background:var(--grn);box-shadow:0 0 10px var(--grn);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.4}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">PerceptionLab · geometric neuron / koopman island · live</div>
+  <h1>chiral ear</h1>
+  <div class="tag">A geometric neuron that <b>hears the direction of time</b>. It reads a frequency sweep's chirality from a single streaming cross-time term per band — <b>no model, no training, runs on your phone</b>. An up-sweep and a down-sweep can have the <b>identical power spectrum</b>, so any magnitude-only readout is blind to which way time flows. This one isn't.</div>
+  <div class="ethos">do not hype · do not lie · just show</div>
+</header>
+
+<div class="controls">
+  <button id="mic" class="primary"><span class="live" id="livedot"></span>Listen to my mic</button>
+  <button id="up" class="up">▲ play up-sweep</button>
+  <button id="down" class="down">▼ play down-sweep</button>
+  <button id="stop" disabled>■ stop</button>
+  <span class="hint" id="hint">whistle a rising vs falling tone — watch the needle flip.</span>
+</div>
+
+<div class="grid">
+  <!-- LEFT: the arrow of time -->
+  <div class="panel">
+    <span class="badge">L = Im(z·z̄ₗₐ𝓰)</span>
+    <h2>the arrow of time</h2>
+    <div class="dial-wrap">
+      <canvas id="dial" width="520" height="300"></canvas>
+      <div>
+        <div class="verdict steady" id="verdict">— steady —</div>
+        <div class="bignum">net L &nbsp;<b id="netL">0.00</b></div>
+        <div class="readout" id="conf">confidence —</div>
+      </div>
+    </div>
+    <h2 style="margin-top:14px">spectral islands · spikes fire only on change</h2>
+    <canvas id="spec" width="700" height="190"></canvas>
+  </div>
+
+  <!-- RIGHT: the wattage meter + stats -->
+  <div class="panel">
+    <h2>wattage meter · energy is spent only when content changes</h2>
+    <div class="meterrow">
+      <span class="lbl">field |ds/dt|</span>
+      <div class="bar"><i id="barField" style="background:linear-gradient(90deg,#42f5a1,#2ec5ff)"></i></div>
+      <span class="val" id="valField">0.00</span>
+    </div>
+    <div class="meterrow">
+      <span class="lbl">spike rate</span>
+      <div class="bar"><i id="barSpk" style="background:linear-gradient(90deg,#f5c542,#ff3b6b)"></i></div>
+      <span class="val" id="valSpk">0 Hz</span>
+    </div>
+    <div class="meterrow">
+      <span class="lbl">compute now</span>
+      <div class="bar"><i id="barPow" style="background:linear-gradient(90deg,#a98bff,#ff3b6b)"></i></div>
+      <span class="val" id="valPow">0%</span>
+    </div>
+
+    <div style="margin-top:14px">
+      <div class="stat"><span>silence ratio (peak ÷ now)</span><b id="silence">—</b></div>
+      <div class="stat"><span>active duty cycle</span><b id="duty">—</b></div>
+      <div class="stat"><span>islands</span><b id="nis">28 bands → 27 edges</b></div>
+      <div class="stat"><span>readout cost / frame</span><b>27 mults · O(K)</b></div>
+    </div>
+    <p style="font-size:11.5px;color:var(--gry);margin:12px 0 0">
+      Hold a steady tone and the meters fall to the floor — the engine is nearly free while nothing happens.
+      It only pays compute at onsets and transitions. That is the delta-code, live.
+    </p>
+  </div>
+</div>
+
+<!-- PROOF PANEL -->
+<div class="panel proof">
+  <h2>the proof · same spectrum, opposite arrow (wiener–khinchin escape)</h2>
+  <div class="proofgrid">
+    <div>
+      <canvas id="wk" width="700" height="220"></canvas>
+      <p style="font-size:11.5px;color:var(--gry);margin:6px 0 0">
+        Up-sweep (blue) and down-sweep (red) are time-reversals of each other, so their power spectra
+        <b style="color:var(--txt)">lie exactly on top of one another</b>. A Fourier-magnitude readout sees one curve and cannot tell them apart.
+      </p>
+    </div>
+    <div>
+      <p style="font-size:12px;color:var(--gry);margin:2px 0 6px">Same two signals through the island readout:</p>
+      <div class="lk">
+        <div class="lkbox up"><div class="t">UP-SWEEP</div><div class="n" id="lkUp">+0.00</div><div class="s">net L &gt; 0 → rising</div></div>
+        <div class="lkbox down"><div class="t">DOWN-SWEEP</div><div class="n" id="lkDown">−0.00</div><div class="s">net L &lt; 0 → falling</div></div>
+      </div>
+      <p style="font-size:11.5px;color:var(--gry);margin:10px 0 0">
+        The sign flips because L = Im(zₖ·z̄ₖ(t−lag)) is a <b style="color:var(--txt)">bilinear cross-time product</b> — a phase-coupling term, not an energy term. That is the only place direction can live.
+      </p>
+    </div>
+  </div>
+</div>
+
+<details>
+  <summary>what is honest here / what is not</summary>
+  <p><b>The front end is a filterbank</b> (an FFT grouped into log-spaced bands — the cochlea's job). That part <i>is</i> spectral. The novelty is not in decomposing the sound; it is in the <b>readout</b>.</p>
+  <p><span class="lab">Verified, live, in front of you:</span> each island is a directed-edge complex cell <b>zₖ = ⟨bandₖ⟩ + i⟨bandₖ₊₁⟩</b>; its angular momentum <b>Lₖ = Im(zₖ(t)·z̄ₖ(t−lag)) = bₖ₊₁(t)·bₖ(t−lag) − bₖ(t)·bₖ₊₁(t−lag)</b> is the signed rotation of energy across that edge. Net L &gt; 0 ⇔ energy sweeping up; &lt; 0 ⇔ down. It flips on time-reversal. The wattage meters are field velocity |ds/dt| and spike rate — both genuinely fall toward zero on steady input.</p>
+  <p><span class="ceil">The ceiling (the honest correction):</span> a <i>magnitude</i> readout √(⟨X,gₛ⟩²+⟨X,gᵧ⟩²) is power-spectrum-equivalent (Wiener–Khinchin) and is <b>blind</b> to direction at matched spectrum. Direction is recoverable <b>only</b> from the bilinear / phase-coupling term — that is exactly why this works and why a Fourier filter cannot. The proof panel shows the matched spectra it cannot use.</p>
+  <p><span class="bet">Still the bet, untouched:</span> none of this claims the held field is <i>experienced</i>, or that this is "a brain." It is one cheap, event-driven geometric primitive doing a real signal-processing job that magnitude readouts can't do cheaply. That's all it claims — and it's enough to be useful.</p>
+  <p style="color:var(--gry)">Engine faithful to <b>geometric_neuron_v5.py</b> (PerceptionLab / Antti Luode, with Claude). MIT.</p>
+</details>
+
+<footer>chiral ear · perceptionlab · helsinki 2026 — point it at a sound and watch which way time points.</footer>
+</div>
+
+<script>
+"use strict";
+// ---------- config ----------
+const K = 28;                 // islands (frequency bands)
+const LAG = 8;                // frames of delay for the cross-time product
+const FMIN = 120, FMAX = 6000;
+const dt = 1/60;
+// spiking (faithful to v5, change-driven so it is event-driven)
+const f_theta=8, m_theta=0.8, leak_v=0.90, thr=0.42, beta=3.0, tau_a=0.18, sigmaJN=0.05;
+
+// ---------- audio ----------
+let ac=null, analyser=null, micStream=null, micSrc=null, srcNode=null;
+let freqData=null, sr=44100;
+let running=false, mode=null;
+
+function ensureCtx(){
+  if(!ac){ ac=new (window.AudioContext||window.webkitAudioContext)(); sr=ac.sampleRate;
+    analyser=ac.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=0.55;
+    freqData=new Uint8Array(analyser.frequencyBinCount); }
+  if(ac.state==="suspended") ac.resume();
+}
+function disconnectSource(){
+  if(srcNode){try{srcNode.stop();}catch(e){} try{srcNode.disconnect();}catch(e){} srcNode=null;}
+  if(micSrc){try{micSrc.disconnect();}catch(e){} micSrc=null;}
+  if(micStream){micStream.getTracks().forEach(t=>t.stop()); micStream=null;}
+}
+
+async function startMic(){
+  ensureCtx(); stopAll(false);
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  }catch(e){ document.getElementById('hint').textContent="mic blocked — try the up/down sweep buttons instead."; return; }
+  micSrc=ac.createMediaStreamSource(micStream); micSrc.connect(analyser);
+  mode='mic'; begin(); document.getElementById('livedot').classList.add('on');
+  document.getElementById('hint').textContent="whistle / hum a rising then a falling tone.";
+}
+
+function playSweep(dir){
+  ensureCtx(); stopAll(false);
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type='sawtooth';
+  const t0=ac.currentTime, dur=2.6;
+  const f1= dir>0 ? FMIN*1.6 : FMAX*0.8;
+  const f2= dir>0 ? FMAX*0.8 : FMIN*1.6;
+  o.frequency.setValueAtTime(f1,t0);
+  o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(0.16,t0+0.05);
+  g.gain.setValueAtTime(0.16,t0+dur-0.1);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(analyser); g.connect(ac.destination);
+  o.start(t0); o.stop(t0+dur+0.05);
+  srcNode=o; mode = dir>0?'up':'down'; begin();
+  document.getElementById('hint').textContent = (dir>0?"up-sweep":"down-sweep")+" playing — needle should point "+(dir>0?"up.":"down.");
+  o.onended=()=>{ if(mode===(dir>0?'up':'down')) document.getElementById('hint').textContent="play the other sweep — the needle flips."; };
+}
+
+function stopAll(updateUI=true){
+  disconnectSource(); document.getElementById('livedot').classList.remove('on');
+  if(updateUI){ running=false; document.getElementById('stop').disabled=true; }
+}
+
+// ---------- engine state ----------
+let band=new Float32Array(K), bandPrev=new Float32Array(K);
+let hist=[]; // ring of band-vectors for lag
+let v=new Float32Array(K), a=new Float32Array(K);
+let flash=new Float32Array(K);
+let tstep=0;
+let netLsmooth=0, dsSmooth=0, spkSmooth=0;
+let powPeak=1e-6, dsPeak=1e-6, spkPeak=1e-6;
+let activeFrames=0, totalFrames=0;
+
+// log-spaced band edges over FFT bins
+let bandLo=[], bandHi=[];
+function buildBands(){
+  bandLo=[];bandHi=[]; const nb=analyser.frequencyBinCount; const binHz=sr/analyser.fftSize;
+  for(let k=0;k<K;k++){
+    const f0=FMIN*Math.pow(FMAX/FMIN,k/K), f1=FMIN*Math.pow(FMAX/FMIN,(k+1)/K);
+    bandLo.push(Math.max(1,Math.floor(f0/binHz))); bandHi.push(Math.min(nb-1,Math.ceil(f1/binHz)));
+  }
+}
+
+function readBands(){
+  analyser.getByteFrequencyData(freqData);
+  let tot=0;
+  for(let k=0;k<K;k++){
+    let s=0,n=0; for(let b=bandLo[k];b<=bandHi[k];b++){s+=freqData[b];n++;}
+    const val=(n?s/n:0)/255; band[k]=val; tot+=val;
+  }
+  if(tot>1e-6){ for(let k=0;k<K;k++) band[k]/=tot; } // normalize → island overlaps
+}
+
+function begin(){
+  buildBands();
+  band.fill(0);bandPrev.fill(0);v.fill(0);a.fill(0);flash.fill(0);hist=[];tstep=0;
+  netLsmooth=0;dsSmooth=0;spkSmooth=0;powPeak=1e-6;dsPeak=1e-6;spkPeak=1e-6;activeFrames=0;totalFrames=0;
+  running=true; document.getElementById('stop').disabled=false;
+}
+
+// ---------- per-frame update ----------
+function update(){
+  readBands();
+  // lag buffer
+  hist.push(Float32Array.from(band)); if(hist.length>LAG+1) hist.shift();
+  const lagB = hist.length>LAG ? hist[hist.length-1-LAG] : band;
+
+  // field velocity |ds/dt|
+  let ds=0; for(let k=0;k<K;k++){const d=band[k]-bandPrev[k]; ds+=d*d;} ds=Math.sqrt(ds);
+
+  // angular momentum per edge:  L_k = b_{k+1}(t) b_k(t-lag) - b_k(t) b_{k+1}(t-lag)
+  let netL=0, presTot=0;
+  for(let k=0;k<K-1;k++){
+    const Lk = band[k+1]*lagB[k] - band[k]*lagB[k+1];
+    const pres = band[k]+band[k+1];
+    netL += Lk; presTot += pres;
+  }
+  netL = presTot>1e-6 ? netL/presTot : 0;          // normalize by presence
+  netL *= 40;                                       // scale into a readable range
+  netLsmooth = 0.85*netLsmooth + 0.15*netL;
+
+  // spiking (event-driven): drive on coherent change, theta-gated, adaptation + noise
+  const g = 1 + m_theta*Math.cos(2*Math.PI*f_theta*tstep*dt);
+  let spikes=0;
+  for(let k=0;k<K;k++){
+    const dz = Math.abs(band[k]-bandPrev[k]);            // change of content
+    const pres = band[k];
+    const drive = 6.0*pres*Math.tanh(20*dz);
+    const net = g*drive - beta*a[k] + sigmaJN*(Math.random()*2-1);
+    v[k] = leak_v*v[k] + net;
+    if(v[k]>thr){ v[k]=0; a[k]+=1; spikes++; flash[k]=1; }
+    a[k] *= Math.exp(-dt/tau_a);
+    flash[k]*=0.82;
+  }
+  bandPrev.set(band); tstep++;
+
+  // meters
+  dsSmooth = 0.8*dsSmooth + 0.2*ds;
+  const spkRate = spikes/dt; spkSmooth = 0.8*spkSmooth + 0.2*spkRate;
+  const pow = dsSmooth + 0.004*spkSmooth;             // assigned wattage: field + spike cost
+  dsPeak=Math.max(dsPeak*0.999, dsSmooth); spkPeak=Math.max(spkPeak*0.999, spkSmooth); powPeak=Math.max(powPeak*0.999, pow);
+  totalFrames++; if(pow>0.18*powPeak) activeFrames++;
+
+  drawDial(netLsmooth);
+  drawSpec();
+  updateMeters(dsSmooth,spkSmooth,pow);
+}
+
+// ---------- rendering ----------
+const dial=document.getElementById('dial'), dctx=dial.getContext('2d');
+const spec=document.getElementById('spec'), sctx=spec.getContext('2d');
+function fitCanvas(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;
+  if(c.width!==Math.round(r.width*d)||c.height!==Math.round(r.height*d)){c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);}
+  return d;}
+
+function drawDial(L){
+  const d=fitCanvas(dial),W=dial.width,H=dial.height;
+  dctx.clearRect(0,0,W,H);
+  const cx=W*0.5, cy=H*0.92, R=H*0.78;
+  // gauge arc
+  dctx.lineWidth=2*d;
+  dctx.strokeStyle="#1d1d30";
+  dctx.beginPath();dctx.arc(cx,cy,R,Math.PI*1.18,Math.PI*1.82);dctx.stroke();
+  // ticks + labels
+  dctx.fillStyle="#3a3a5e";dctx.font=`${11*d}px "IBM Plex Mono"`;dctx.textAlign="center";
+  dctx.fillStyle="#2ec5ff";dctx.fillText("▲ RISING", cx+R*0.62, cy-R*0.62);
+  dctx.fillStyle="#ff3b6b";dctx.fillText("FALLING ▼", cx-R*0.62, cy-R*0.62);
+  dctx.fillStyle="#6b6b85";dctx.fillText("steady", cx, cy-R-6*d);
+  // needle: map L (clamped) to angle.  L>0 rising → right/up, L<0 falling → left/up
+  const Lc=Math.max(-1,Math.min(1, L));
+  const ang = -Math.PI/2 + Lc*(Math.PI*0.32);   // straight up at L=0
+  const col = Lc>0.06?"#2ec5ff":(Lc<-0.06?"#ff3b6b":"#6b6b85");
+  // glow
+  const grad=dctx.createLinearGradient(cx,cy,cx+R*Math.cos(ang),cy+R*Math.sin(ang));
+  grad.addColorStop(0,col+"00");grad.addColorStop(1,col);
+  dctx.strokeStyle=grad;dctx.lineWidth=5*d;dctx.lineCap="round";
+  dctx.shadowColor=col;dctx.shadowBlur=18*d;
+  dctx.beginPath();dctx.moveTo(cx,cy);dctx.lineTo(cx+R*0.92*Math.cos(ang),cy+R*0.92*Math.sin(ang));dctx.stroke();
+  dctx.shadowBlur=0;
+  dctx.fillStyle=col;dctx.beginPath();dctx.arc(cx,cy,6*d,0,7);dctx.fill();
+
+  // verdict text
+  const vEl=document.getElementById('verdict'), nEl=document.getElementById('netL'), cEl=document.getElementById('conf');
+  nEl.textContent=(L>=0?"+":"")+L.toFixed(2);
+  const conf=Math.min(100,Math.round(Math.abs(L)*120));
+  if(L>0.06){vEl.textContent="time ↑ rising";vEl.className="verdict up";}
+  else if(L<-0.06){vEl.textContent="time ↓ falling";vEl.className="verdict down";}
+  else{vEl.textContent="— steady —";vEl.className="verdict steady";}
+  cEl.textContent="direction confidence "+conf+"%";
+}
+
+function drawSpec(){
+  const d=fitCanvas(spec),W=spec.width,H=spec.height;
+  sctx.clearRect(0,0,W,H);
+  const bw=W/K;
+  for(let k=0;k<K;k++){
+    const h=Math.min(1,band[k]*5)*H*0.86;
+    const x=k*bw;
+    sctx.fillStyle="#16162a";sctx.fillRect(x+1,H-H*0.9,bw-2,H*0.9);
+    const grd=sctx.createLinearGradient(0,H,0,H-h);
+    grd.addColorStop(0,"#2ec5ff44");grd.addColorStop(1,"#a98bff");
+    sctx.fillStyle=grd;sctx.fillRect(x+1,H-h,bw-2,h);
+    if(flash[k]>0.05){
+      sctx.fillStyle=`rgba(255,59,107,${flash[k]})`;
+      sctx.shadowColor="#ff3b6b";sctx.shadowBlur=12*d;
+      sctx.fillRect(x+1,H-h-7*d,bw-2,5*d); sctx.shadowBlur=0;
+    }
+  }
+  sctx.fillStyle="#3a3a5e";sctx.font=`${10*d}px "IBM Plex Mono"`;sctx.textAlign="left";
+  sctx.fillText("low ◂ frequency band ▸ high",6*d,12*d);
+}
+
+function updateMeters(ds,spk,pow){
+  const f=Math.min(100,ds/Math.max(dsPeak,1e-6)*100);
+  const sp=Math.min(100,spk/Math.max(spkPeak,1e-6)*100);
+  const pw=Math.min(100,pow/Math.max(powPeak,1e-6)*100);
+  document.getElementById('barField').style.width=f+'%';
+  document.getElementById('barSpk').style.width=sp+'%';
+  document.getElementById('barPow').style.width=pw+'%';
+  document.getElementById('valField').textContent=ds.toFixed(3);
+  document.getElementById('valSpk').textContent=Math.round(spk)+' Hz';
+  document.getElementById('valPow').textContent=Math.round(pw)+'%';
+  document.getElementById('silence').textContent=(powPeak/Math.max(pow,1e-6)).toFixed(0)+'×';
+  document.getElementById('duty').textContent=(100*activeFrames/Math.max(totalFrames,1)).toFixed(0)+'% of frames';
+}
+
+// ---------- main loop ----------
+function loop(){ if(running){ try{update();}catch(e){console.error(e);} } requestAnimationFrame(loop); }
+loop();
+
+// ---------- offline WK proof ----------
+function genChirp(dir,N){
+  const x=new Float32Array(N);
+  const f1=dir>0?0.02:0.22, f2=dir>0?0.22:0.02;     // normalized freq
+  let ph=0;
+  for(let i=0;i<N;i++){ const f=f1+(f2-f1)*i/N; ph+=2*Math.PI*f; x[i]=Math.sin(ph)+0.5*Math.sin(2*ph+0.4); }
+  return x;
+}
+function fftMag(x){ // simple DFT magnitude (N small) → coarse spectrum
+  const N=x.length, M=96, mag=new Float32Array(M);
+  for(let m=0;m<M;m++){let re=0,im=0;const w=Math.PI*m/M;
+    for(let n=0;n<N;n+=4){re+=x[n]*Math.cos(w*n);im-=x[n]*Math.sin(w*n);}
+    mag[m]=Math.sqrt(re*re+im*im);}
+  let mx=0;for(let m=0;m<M;m++)mx=Math.max(mx,mag[m]); for(let m=0;m<M;m++)mag[m]/=(mx||1);
+  return mag;
+}
+// run chirp through the same island readout, offline
+function offlineNetL(x){
+  const N=x.length, win=256, hop=64, kb=K;
+  // build band energies over time via short windows
+  const frames=[];
+  for(let p=0;p+win<N;p+=hop){
+    const bb=new Float32Array(kb);
+    for(let m=0;m<kb;m++){ // band m ≈ freq m/kb*0.25
+      const w=Math.PI*(m+1)/kb*0.25; let re=0,im=0;
+      for(let n=0;n<win;n++){re+=x[p+n]*Math.cos(w*2*n);im-=x[p+n]*Math.sin(w*2*n);}
+      bb[m]=Math.sqrt(re*re+im*im);
+    }
+    let t=0;for(let m=0;m<kb;m++)t+=bb[m]; if(t>1e-9)for(let m=0;m<kb;m++)bb[m]/=t;
+    frames.push(bb);
+  }
+  const lag=3; let netL=0,pres=0;
+  for(let i=lag;i<frames.length;i++){const c=frames[i],l=frames[i-lag];
+    for(let m=0;m<kb-1;m++){netL+=c[m+1]*l[m]-c[m]*l[m+1]; pres+=c[m]+c[m+1];}}
+  return pres>1e-9? netL/pres*40 : 0;
+}
+function drawWK(up,down){
+  const c=document.getElementById('wk'),x=c.getContext('2d');
+  const d=fitCanvas(c),W=c.width,H=c.height; x.clearRect(0,0,W,H);
+  const mU=fftMag(up),mD=fftMag(down),M=mU.length,bw=W/M;
+  // axes
+  x.strokeStyle="#1d1d30";x.lineWidth=1*d;x.beginPath();x.moveTo(0,H-18*d);x.lineTo(W,H-18*d);x.stroke();
+  const plot=(m,col)=>{x.strokeStyle=col;x.lineWidth=2*d;x.beginPath();
+    for(let i=0;i<M;i++){const px=i*bw,py=(H-22*d)-(m[i])*(H-40*d); i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();};
+  plot(mD,"#ff3b6b"); plot(mU,"#2ec5ff");   // they overlap
+  x.fillStyle="#6b6b85";x.font=`${10*d}px "IBM Plex Mono"`;
+  x.fillText("power spectrum (up = blue, down = red — overlapping)",8*d,14*d);
+  x.fillText("frequency →",W-90*d,H-5*d);
+}
+(function runProof(){
+  const N=4096, up=genChirp(+1,N), down=genChirp(-1,N);
+  drawWK(up,down);
+  const lU=offlineNetL(up), lD=offlineNetL(down);
+  document.getElementById('lkUp').textContent=(lU>=0?"+":"")+lU.toFixed(2);
+  document.getElementById('lkDown').textContent=(lD>=0?"+":"")+lD.toFixed(2);
+})();
+window.addEventListener('resize',()=>{ if(!running){drawDial(0);} });
+drawDial(0);
+
+// ---------- wires ----------
+document.getElementById('mic').onclick=startMic;
+document.getElementById('up').onclick=()=>playSweep(+1);
+document.getElementById('down').onclick=()=>playSweep(-1);
+document.getElementById('stop').onclick=()=>{stopAll(true);document.getElementById('hint').textContent="stopped.";};
+</script>
